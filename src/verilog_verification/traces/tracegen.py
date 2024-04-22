@@ -14,12 +14,13 @@ def parse_args():
     default="SimpleO3",
     help="Frontend type (default: Simple O3)"
   )
-
+  #Add more real life cases
   parser.add_argument(
     "--pattern", "-p", type=str, dest="access_pattern",
-    choices=['stream', 'random', 'cpu-gpu'],
-    help="The memory access pattern (choices: stream, random, cpu-gpu)"
-  )
+    choices=['stream', 'random', 'cpu-gpu','locality', 'sequential', 'database', 'scientific', 'machine-learning'],
+    help="The memory access pattern (choices: stream, random, cpu-gpu,locality, sequential, database, scientific, machine-learning)"
+    )
+  
 
   parser.add_argument(
     "--num-insts", "-n", type=int, dest="num_insts",
@@ -62,6 +63,8 @@ def gen_SimpleO3_trace(args):
   generated_insts = 0
   # variables used depending on the access pattern
   stream_addr = 0
+  # variables for previous 
+  prev_addr = 0
 
   while generated_insts < args.num_insts:
     cur_line=str(args.req_dist) + " "
@@ -77,7 +80,23 @@ def gen_SimpleO3_trace(args):
         stream_addr += CACHE_LINE_SIZE
       else:
         rand_addr = random.getrandbits(30) 
-        cur_line = cur_line + str(rand_addr)
+        cur_line += str(rand_addr)
+        #else cases
+    elif args.access_pattern == 'locality':
+            cur_line += str(prev_addr + random.randint(-CACHE_LINE_SIZE * 10, CACHE_LINE_SIZE * 10))
+    elif args.access_pattern == 'sequential':
+            cur_line += str(prev_addr + CACHE_LINE_SIZE)
+    elif args.access_pattern == 'database':
+            # Simulate database access pattern (e.g., scanning through rows)
+            cur_line += str(prev_addr + random.randint(1, 100) * CACHE_LINE_SIZE)
+    elif args.access_pattern == 'scientific':
+            # Simulate scientific computing access pattern (e.g., matrix operations)
+            cur_line += str(prev_addr + random.choice([-1, 0, 1]) * CACHE_LINE_SIZE)
+    elif args.access_pattern == 'machine-learning':
+            # Simulate machine learning access pattern (e.g., accessing feature vectors)
+            cur_line += str(prev_addr + random.randint(-100, 100) * CACHE_LINE_SIZE)
+  
+        
 
     else:
       print ("Error: Unimplemented access pattern: ", args.access_pattern, "!")
@@ -85,6 +104,8 @@ def gen_SimpleO3_trace(args):
 
     trace_file.write(cur_line + '\n')
     generated_insts += args.req_dist
+    prev_addr = int(cur_line.split()[1])
+    
   trace_file.close()
 
 
@@ -102,6 +123,7 @@ def gen_LStrace(args):
   generated_insts = 0
   # variables used depending on the access pattern
   stream_addr = 0
+  prev_addr = 0
 
   while generated_insts < args.num_insts:
     req_type = "LD"
@@ -116,12 +138,28 @@ def gen_LStrace(args):
     elif args.access_pattern == 'random':
         rand_addr = random.getrandbits(30) 
         cur_line = cur_line + str(rand_addr)
+    elif args.access_pattern == 'locality':
+            cur_line += str(prev_addr + random.randint(-CACHE_LINE_SIZE * 10, CACHE_LINE_SIZE * 10))
+    elif args.access_pattern == 'sequential':
+            cur_line += str(prev_addr + CACHE_LINE_SIZE)
+    elif args.access_pattern == 'database':
+            # Simulate database access pattern (e.g., scanning through rows)
+            cur_line += str(prev_addr + random.randint(1, 100) * CACHE_LINE_SIZE)
+    elif args.access_pattern == 'scientific':
+            # Simulate scientific computing access pattern (e.g., matrix operations)
+            cur_line += str(prev_addr + random.choice([-1, 0, 1]) * CACHE_LINE_SIZE)
+    elif args.access_pattern == 'machine-learning':
+            # Simulate machine learning access pattern (e.g., accessing feature vectors)
+            cur_line += str(prev_addr + random.randint(-100, 100) * CACHE_LINE_SIZE)
+    
     else:
         print ("Error: Unimplemented access pattern: ", args.access_pattern, "!")
         sys.exit(-2)
 
     trace_file.write(cur_line + '\n')
     generated_insts += 1
+    prev_addr = int(cur_line.split()[1])
+
   trace_file.close()
 
 
